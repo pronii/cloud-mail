@@ -194,7 +194,7 @@ const publicService = {
 		if (!await cryptoUtils.verifyPassword(password, userRow.salt, userRow.password)) {
 			throw new BizError(t('IncorrectPwd'));
 		}
-	}
+	},
 
 	async sendEmail(c, params) {
 		let {

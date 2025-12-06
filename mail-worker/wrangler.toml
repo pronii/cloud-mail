@@ -36,4 +36,20 @@ crons = ["0 16 * * *"]	#定时任务每天晚上12点执行
 #jwt_secret = ""			#jwt令牌的密钥,随便填一串字符串
 
 [build]
-command = "pnpm --prefix ../mail-vue install && pnpm --prefix ../mail-vue run build"
+command = "npm --prefix ../mail-vue install --legacy-peer-deps && npm --prefix ../mail-vue run build"
+
+[assets]
+binding = "assets"		#静态资源绑定名默认不可修改
+directory = "./dist"	#前端vue项目打包的静态资源存放位置,默认dist
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+[triggers]
+crons = ["0 16 * * *"]	#定时任务每天晚上12点执行
+
+
+#[vars]
+#orm_log = false
+#domain = []				#邮件域名可可配置多个 示例: ["example1.com","example2.com"]
+#admin = ""				#管理员的邮箱	示例: admin@example.com
+#jwt_secret = ""			#jwt令牌的密钥,随便填一串字符串
