@@ -1,7 +1,7 @@
 import BizError from '../error/biz-error';
 import orm from '../entity/orm';
 import { v4 as uuidv4 } from 'uuid';
-import { and, asc, desc, eq, sql, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import saltHashUtils from '../utils/crypto-utils';
 import cryptoUtils from '../utils/crypto-utils';
 import emailUtils from '../utils/email-utils';
@@ -10,16 +10,14 @@ import verifyUtils from '../utils/verify-utils';
 import { t } from '../i18n/i18n';
 import reqUtils from '../utils/req-utils';
 import dayjs from 'dayjs';
-import { isDel, roleConst, emailConst, settingConst } from '../const/entity-const';
+import { emailConst, isDel, roleConst, settingConst } from '../const/entity-const';
 import email from '../entity/email';
 import userService from './user-service';
 import KvConst from '../const/kv-const';
 import emailService from './email-service';
 import settingService from './setting-service';
 import accountService from './account-service';
-import attService from './att-service';
 import { Resend } from 'resend';
-import { parseHTML } from 'linkedom';
 
 const publicService = {
 
@@ -212,22 +210,19 @@ const publicService = {
 			adminPassword
 		} = params;
 
-		// 验证管理员身份
 		await this.verifyUser(c, { email: adminEmail, password: adminPassword });
 
-		const { resendTokens, r2Domain, send } = await settingService.query(c);
+		const { resendTokens, send } = await settingService.query(c);
 
 		if (send === settingConst.send.CLOSE) {
 			throw new BizError(t('disabledSend'), 403);
 		}
 
-		// 验证收件人邮箱格式
 		if (!receiveEmail || receiveEmail.length === 0) {
 			throw new BizError(t('emptyRecipientMsg'));
 		}
 
-		// 验证收件人邮箱数量限制（防止滥用）
-		if (receiveEmail.length > 100) { // 限制单次发送数量
+		if (receiveEmail.length > 100) {
 			throw new BizError('单次发送邮件收件人数量不能超过100个');
 		}
 
@@ -237,27 +232,24 @@ const publicService = {
 			}
 		}
 
-		// 验证邮件内容和主题长度限制
 		if (subject && subject.length > 500) {
 			throw new BizError('邮件主题长度不能超过500个字符');
 		}
 
-		if (content && content.length > 100000) { // 100KB 限制
+		if (content && content.length > 100000) {
 			throw new BizError('邮件内容长度不能超过100000个字符');
 		}
 
-		if (text && text.length > 100000) { // 100KB 限制
+		if (text && text.length > 100000) {
 			throw new BizError('邮件文本内容长度不能超过100000个字符');
 		}
 
-		// 验证发件人账户
 		const accountRow = await accountService.selectById(c, accountId);
 
 		if (!accountRow) {
 			throw new BizError(t('senderAccountNotExist'));
 		}
 
-		// 获取域名对应的Resend令牌
 		const domain = emailUtils.getDomain(accountRow.email);
 		const resendToken = resendTokens[domain];
 
@@ -269,13 +261,11 @@ const publicService = {
 			name = emailUtils.getName(accountRow.email);
 		}
 
-		// 准备发送邮件
 		const resend = new Resend(resendToken);
 
 		let resendResult = null;
-
-		// 如果是回复邮件，需要获取原始邮件信息
 		let emailRow = { messageId: null };
+
 		if (sendType === 'reply' && emailId) {
 			emailRow = await emailService.selectById(c, emailId);
 			if (!emailRow) {
@@ -283,7 +273,6 @@ const publicService = {
 			}
 		}
 
-		// 如果是分开发送
 		if (manyType === 'divide') {
 			if (attachments && attachments.length > 0) {
 				throw new BizError(t('noSeparateSend'));
@@ -333,7 +322,6 @@ const publicService = {
 			throw new BizError(error.message);
 		}
 
-		// 在数据库中保存邮件记录
 		const emailData = {};
 		emailData.sendEmail = accountRow.email;
 		emailData.name = name;
@@ -344,7 +332,6 @@ const publicService = {
 		emailData.type = emailConst.type.SEND;
 		emailData.status = emailConst.status.SENT;
 
-		// 为管理员用户添加邮件记录
 		const adminUser = await userService.selectByEmailIncludeDel(c, adminEmail);
 		emailData.userId = adminUser.userId;
 
@@ -359,10 +346,7 @@ const publicService = {
 			});
 		} else {
 			emailData.resendEmailId = data.id;
-
-			const recipient = receiveEmail.map(item => ({ address: item, name: '' }));
-			emailData.recipient = JSON.stringify(recipient);
-
+			emailData.recipient = JSON.stringify(receiveEmail.map(item => ({ address: item, name: '' })));
 			emailDataList.push(emailData);
 		}
 
@@ -373,14 +357,11 @@ const publicService = {
 			});
 		}
 
-		// 保存邮件记录到数据库
-		const emailRowList = await Promise.all(
+		return await Promise.all(
 			emailDataList.map(async (emailData) => {
 				return await orm(c).insert(email).values(emailData).returning().get();
 			})
 		);
-
-		return emailRowList;
 	}
 
 }

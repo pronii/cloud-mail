@@ -5,7 +5,7 @@ export const setting = sqliteTable('setting', {
 	title: text('title').default('').notNull(),
 	manyEmail: integer('many_email').default(0).notNull(),
 	addEmail: integer('add_email').default(0).notNull(),
-	autoRefreshTime: integer('auto_refresh_time').default(0).notNull(),
+	autoRefresh: integer('auto_refresh').default(0).notNull(),
 	addEmailVerify: integer('add_email_verify').default(1).notNull(),
 	registerVerify: integer('register_verify').default(1).notNull(),
 	regVerifyCount: integer('reg_verify_count').default(1).notNull(),
@@ -40,13 +40,17 @@ export const setting = sqliteTable('setting', {
 	endpoint: text('endpoint').default('').notNull(),
 	s3AccessKey: text('s3_access_key').default('').notNull(),
 	s3SecretKey: text('s3_secret_key').default('').notNull(),
-	kvStorage: integer('kv_storage').default(1).notNull(),
 	forcePathStyle: integer('force_path_style').default(1).notNull(),
 	customDomain: text('custom_domain').default('').notNull(),
 	tgMsgFrom: text('tg_msg_from').default('only-name').notNull(),
 	tgMsgTo: text('tg_msg_to').default('show').notNull(),
 	tgMsgText: text('tg_msg_text').default('hide').notNull(),
 	minEmailPrefix: integer('min_email_prefix').default(0).notNull(),
-	emailPrefixFilter: text('email_prefix_filter').default('').notNull()
+	emailPrefixFilter: text('email_prefix_filter').default('').notNull(),
+	blackSubject: text('black_subject').default('').notNull(),
+	blackContent: text('black_content').default('').notNull(),
+	blackFrom: text('black_from').default('').notNull(),
+	aiCode: integer('ai_code').default(1).notNull(),
+	aiCodeFilter: text('ai_code_filter').default('').notNull()
 });
 export default setting

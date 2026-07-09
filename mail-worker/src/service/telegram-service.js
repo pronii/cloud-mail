@@ -52,6 +52,23 @@ const telegramService = {
 		const jwtToken = await jwtUtils.generateToken(c, { emailId: email.emailId })
 
 		const webAppUrl = customDomain ? `${domainUtils.toOssDomain(customDomain)}/api/telegram/getEmail/${jwtToken}` : 'https://www.cloudflare.com/404'
+		const inlineKeyboard = [
+			[
+				{
+					text: 'View',
+					web_app: { url: webAppUrl }
+				}
+			]
+		];
+
+		if (email.code) {
+			inlineKeyboard.push([
+				{
+					text: email.code,
+					copy_text: { text: email.code }
+				}
+			]);
+		}
 
 		await Promise.all(tgChatIds.map(async chatId => {
 			try {
@@ -65,22 +82,15 @@ const telegramService = {
 						parse_mode: 'HTML',
 						text: emailMsgTemplate(email, tgMsgTo, tgMsgFrom, tgMsgText),
 						reply_markup: {
-							inline_keyboard: [
-								[
-									{
-										text: '查看',
-										web_app: { url: webAppUrl }
-									}
-								]
-							]
+							inline_keyboard: inlineKeyboard
 						}
 					})
 				});
 				if (!res.ok) {
-					console.error(`转发 Telegram 失败: chatId=${chatId}, 状态码=${res.status}`);
+					console.error(`转发 Telegram 失败 status: ${res.status} response: ${await res.text()}`);
 				}
 			} catch (e) {
-				console.error(`转发 Telegram 失败: chatId=${chatId}`, e.message);
+				console.error(`转发 Telegram 失败:`, e.message);
 			}
 		}));
 
